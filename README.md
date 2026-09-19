@@ -5,7 +5,7 @@ Sprint 0 includes a basic card deck, unit tests, and a GUI
 for selecting game settings. The full game is not implemented yet.
 ## Tools
 
-- Language: Python 3
+- Language: Python
 - GUI library: Tkinter
 - IDE: Visual Studio Code
 - Testing framework: unittest
