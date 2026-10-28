@@ -44,6 +44,7 @@ python -m unittest sprint2.test_game test_deck -v
 
 | File | Responsibility |
 | --- | --- |
+| `__init__.py` | Marks this folder as a Python package for imports and test discovery. It contains no game logic. |
 | `board.py` | `Board` validates settings and builds each shape's valid holes. |
 | `game.py` | `PegSolitaireGame` handles initialization, jumps, results and ratings. |
 | `solitaire_gui.py` | `SolitaireApp` displays controls, draws holes and handles clicks. |
