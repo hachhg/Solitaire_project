@@ -1,6 +1,6 @@
 """Peg-solitaire rules with no dependency on Tkinter or any user interface."""
 
-from board import Board, Position
+from .board import Board, Position
 
 
 class PegSolitaireGame:

@@ -8,7 +8,7 @@ import tkinter as tk
 import unittest
 from types import SimpleNamespace
 
-from solitaire_gui import SolitaireApp
+from .solitaire_gui import SolitaireApp
 
 
 class GuiTests(unittest.TestCase):

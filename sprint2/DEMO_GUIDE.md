@@ -51,7 +51,7 @@ pegs and rating. A single peg would be a win with an Outstanding rating."
 
 ## 1:40 to 2:15 - Automated tests
 
-Run:
+Run from the repository root:
 
 ```text
 python -m unittest discover -v
@@ -66,7 +66,7 @@ Make sure the video visibly includes **Ran 35 tests** and **OK**.
 
 ## 2:15 to 2:30 - Show the code and repository
 
-Show board.py, game.py and solitaire_gui.py briefly, then the public GitHub link
+Show sprint2/board.py, sprint2/game.py and sprint2/solitaire_gui.py briefly, then the public GitHub link
 in the report. Explain that the test files are in the same repository.
 
 ## Before submitting

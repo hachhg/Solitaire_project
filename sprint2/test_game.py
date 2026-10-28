@@ -2,8 +2,8 @@
 
 import unittest
 
-from board import Board
-from game import PegSolitaireGame
+from .board import Board
+from .game import PegSolitaireGame
 
 
 class BoardTests(unittest.TestCase):

@@ -14,4 +14,4 @@ jobs:
         with:
           python-version: '3.12'
       - name: Test game rules and retained Sprint 0 deck
-        run: python -m unittest test_game test_deck -v
+        run: python -m unittest sprint2.test_game test_deck -v
