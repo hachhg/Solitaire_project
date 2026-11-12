@@ -1,5 +1,21 @@
 # CS449 Solitaire Project
 
+## Sprint 3
+
+The current game, tests, requirements and demonstration guide are in
+**[sprint3/](sprint3/)**. Sprint 3 adds automated play, randomization, recording
+and replay while keeping the English board shaped like a plus sign.
+
+From the repository root on Windows:
+
+```text
+py -m sprint3.solitaire_gui
+py -m unittest discover -v
+```
+
+The complete test run contains 78 tests: 43 for Sprint 3 and 35 retained tests.
+See the [Sprint 3 README](sprint3/README.md) for commands and controls.
+
 ## Sprint 2
 
 All Sprint 2 game code, tests and its demo guide are in **[sprint2/](sprint2/)**.
@@ -12,7 +28,7 @@ python -m sprint2.solitaire_gui
 python -m unittest discover -v
 ```
 
-The complete test run includes 33 Sprint 2 tests and 2 retained Sprint 0 tests.
+Sprint 2 contributed 33 tests, in addition to the 2 retained Sprint 0 tests.
 
 ## Earlier sprints
 
