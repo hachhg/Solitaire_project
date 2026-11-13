@@ -83,6 +83,21 @@ methods; the public `pegs` property returns an immutable collection.
 The mode is selected when New Game creates a model. The program replaces the
 model when a new mode is chosen; it does not change an object's Python class.
 
+## Reading the code
+
+Start with `board.py`, then read `game.py`, `recording.py` and `solitaire_gui.py`.
+The code uses named variables, ordinary loops and explicit conditions so each
+step can be followed in order. GUI button availability is handled separately
+by `_update_buttons`.
+
+A few Python features used here:
+
+- `@property` provides a getter, such as reading `game.peg_count`.
+- `frozenset` is a set that callers cannot change.
+- A leading underscore marks an internal field or helper by Python convention.
+- `@classmethod` lets `GameReplay.load` return a new replay object from a file.
+- Tkinter's `after` schedules one step, keeping the interface responsive.
+
 ## Assignment progress
 
 The six required demonstration items are listed in [DEMO_GUIDE.md](DEMO_GUIDE.md).

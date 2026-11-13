@@ -10,12 +10,16 @@ class GameRecording:
     """Store the starting position and each successful game action."""
 
     def __init__(self, game):
+        positions = []
+        for row, column in sorted(game.pegs):
+            positions.append([row, column])
+
         self._data = {
             "version": 1,
             "size": game.board.size,
             "board_type": game.board.board_type,
             "mode": game.MODE,
-            "initial_pegs": [list(position) for position in sorted(game.pegs)],
+            "initial_pegs": positions,
             "initial_moves": game.move_count,
             "events": [],
         }
@@ -26,9 +30,13 @@ class GameRecording:
         })
 
     def record_randomization(self, game):
+        positions = []
+        for row, column in sorted(game.pegs):
+            positions.append([row, column])
+
         self._data["events"].append({
             "action": "randomize",
-            "pegs": [list(position) for position in sorted(game.pegs)],
+            "pegs": positions,
         })
 
     def save(self, path):
@@ -53,8 +61,9 @@ class GameReplay:
             if not isinstance(data["events"], list):
                 raise ValueError("The recording needs a list of events.")
             replay = cls(data)
-            while replay.step():
-                pass
+            # Check each event now so a bad file never replaces the live game.
+            while not replay.finished:
+                replay.step()
             replay.restart()
             return replay
         except (KeyError, TypeError, ValueError, AttributeError) as error:
@@ -98,6 +107,7 @@ class GameReplay:
     def _coordinate(value):
         if not isinstance(value, list) or len(value) != 2:
             raise ValueError("A move needs a row and column.")
-        if any(type(number) is not int for number in value):
+        row, column = value
+        if type(row) is not int or type(column) is not int:
             raise ValueError("Move coordinates must be whole numbers.")
-        return tuple(value)
+        return (row, column)

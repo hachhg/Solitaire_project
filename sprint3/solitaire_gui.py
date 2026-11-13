@@ -104,7 +104,10 @@ class SolitaireApp:
     def start_new_game(self):
         """Create a new model before replacing any existing game or timer."""
         try:
-            game = create_game(int(self.size_var.get()), self.type_var.get(), self.mode_var.get())
+            size = int(self.size_var.get())
+            board_type = self.type_var.get()
+            mode = self.mode_var.get()
+            game = create_game(size, board_type, mode)
         except ValueError as error:
             self.status_var.set(f"Invalid settings: {error}")
             return False
@@ -126,13 +129,18 @@ class SolitaireApp:
         self.replay = None
         self.recording = recording
         self.recording_path = path
-        self.file_var.set(f"Recording to {Path(path).name}" if path else "Recording off")
+        if path:
+            self.file_var.set(f"Recording to {Path(path).name}")
+        else:
+            self.file_var.set("Recording off")
         self.refresh("New game started. Click Autoplay in automated mode, or choose a peg.")
         return True
 
     def on_canvas_click(self, event):
         for position, (x, y) in self.centers.items():
-            if abs(event.x - x) <= self.cell_half_size and abs(event.y - y) <= self.cell_half_size:
+            inside_x = abs(event.x - x) <= self.cell_half_size
+            inside_y = abs(event.y - y) <= self.cell_half_size
+            if inside_x and inside_y:
                 self.select_hole(position)
                 return
         self.status_var.set("Click inside a hole on the board.")
@@ -160,7 +168,10 @@ class SolitaireApp:
                 self.recording.record_move(self.selected, position)
             self.selected = None
             error = self._save_recording()
-            self.refresh(error or "Valid jump. Choose your next peg, or click Hint.")
+            if error is not None:
+                self.refresh(error)
+            else:
+                self.refresh("Valid jump. Choose your next peg, or click Hint.")
         else:
             self.refresh("Invalid move. Jump two spaces over one peg into an empty hole.")
 
@@ -186,7 +197,10 @@ class SolitaireApp:
         if self.recording is not None:
             self.recording.record_randomization(self.game)
         error = self._save_recording()
-        self.refresh(error or "Board randomized. Peg and move counts are unchanged.")
+        if error is not None:
+            self.refresh(error)
+        else:
+            self.refresh("Board randomized. Peg and move counts are unchanged.")
         return True
 
     def toggle_autoplay(self):
@@ -200,7 +214,10 @@ class SolitaireApp:
             self.refresh("Paused. Click Autoplay to continue.")
         else:
             self.running = True
-            self.refresh("Replaying recording..." if self.replay else "Automated game running...")
+            if self.replay is not None:
+                self.refresh("Replaying recording...")
+            else:
+                self.refresh("Automated game running...")
             self._timer_id = self.root.after(self.DELAY_MS, self.tick)
 
     def tick(self):
@@ -218,8 +235,13 @@ class SolitaireApp:
         else:
             move = self.game.auto_move()
             if move is not None and self.recording is not None:
-                self.recording.record_move(*move)
-            message = self._save_recording() or "Automated jump completed."
+                start, end = move
+                self.recording.record_move(start, end)
+            error = self._save_recording()
+            if error is not None:
+                message = error
+            else:
+                message = "Automated jump completed."
             if self.game.is_game_over():
                 self.running = False
         self.refresh(message)
@@ -299,12 +321,19 @@ class SolitaireApp:
         return True
 
     def refresh(self, message=None):
+        """Show the current counts, message, button states and board."""
         board = self.game.board
-        mode = "Replay" if self.replay is not None else self.game.MODE
+        mode = self.game.MODE
+        if self.replay is not None:
+            mode = "Replay"
         self.summary_var.set(f"{board.board_type} {board.size} x {board.size} | {mode}"
                              f" | Pegs: {self.game.peg_count} | Moves: {self.game.move_count}")
-        if self.game.is_game_over():
-            result = "You won!" if self.game.is_won() else "Game over - no legal moves."
+        game_over = self.game.is_game_over()
+        if game_over:
+            if self.game.is_won():
+                result = "You won!"
+            else:
+                result = "Game over - no legal moves."
             text = f"{result} {self.game.peg_count} peg(s) left. Rating: {self.game.rating()}."
             if self.replay is not None and self.replay.finished:
                 text += " Replay finished."
@@ -313,16 +342,29 @@ class SolitaireApp:
             self.status_var.set(text)
         elif message:
             self.status_var.set(message)
-        manual = self.game.MODE == "Manual" and self.replay is None and not self.game.is_game_over()
-        automatic = ((self.replay is not None and not self.replay.finished)
-                     or (self.replay is None and self.game.MODE == "Automated"
-                         and not self.game.is_game_over()))
-        self.random_button.configure(state="normal" if manual else "disabled")
-        self.hint_button.configure(state="normal" if manual else "disabled")
-        self.auto_button.configure(text="Pause" if self.running else "Autoplay",
-                                   state="normal" if automatic else "disabled")
-        self.record_check.configure(state="normal" if self.replay is None else "disabled")
+        self._update_buttons(game_over)
         self.draw_board()
+
+    def _update_buttons(self, game_over):
+        """Enable the controls that are available in the current game mode."""
+        self.random_button.configure(state="disabled")
+        self.hint_button.configure(state="disabled")
+        self.auto_button.configure(state="disabled", text="Autoplay")
+        self.record_check.configure(state="normal")
+
+        if self.running:
+            self.auto_button.configure(text="Pause")
+
+        if self.replay is not None:
+            self.record_check.configure(state="disabled")
+            if not self.replay.finished:
+                self.auto_button.configure(state="normal")
+        elif not game_over:
+            if self.game.MODE == "Manual":
+                self.random_button.configure(state="normal")
+                self.hint_button.configure(state="normal")
+            else:
+                self.auto_button.configure(state="normal")
 
     def close(self):
         self._cancel_timer()
@@ -345,7 +387,9 @@ class SolitaireApp:
             y = first_y + row * cell_size
             self.centers[(row, column)] = (x, y)
 
-            color = "#fff0b3" if (row, column) == self.selected else "white"
+            color = "white"
+            if (row, column) == self.selected:
+                color = "#fff0b3"
             half = self.cell_half_size
             self.canvas.create_rectangle(
                 x - half, y - half, x + half, y + half,

@@ -33,9 +33,12 @@ class Board:
         for row in range(self.size):
             for column in range(self.size):
                 if self.board_type == "English":
-                    valid = abs(row - middle) <= 1 or abs(column - middle) <= 1
+                    middle_rows = abs(row - middle) <= 1
+                    middle_columns = abs(column - middle) <= 1
+                    valid = middle_rows or middle_columns
                 elif self.board_type == "Diamond":
-                    valid = abs(row - middle) + abs(column - middle) <= middle
+                    distance = abs(row - middle) + abs(column - middle)
+                    valid = distance <= middle
                 else:
                     valid = abs(row - column) <= middle
                 if valid:

@@ -1,4 +1,4 @@
-"""Shared game rules and the two game modes. No GUI or file handling."""
+"""Peg solitaire rules for manual and automated games."""
 
 import random
 
@@ -24,7 +24,8 @@ class PegSolitaireGame:
         board = Board(size, board_type)
         self._board = board
         self._holes = frozenset(board.holes())
-        self._pegs = set(self._holes) - {board.center}
+        self._pegs = set(self._holes)
+        self._pegs.remove(board.center)
         self._move_count = 0
 
     @property
@@ -37,7 +38,7 @@ class PegSolitaireGame:
 
     @property
     def pegs(self):
-        """An immutable view prevents outside code from changing the pegs."""
+        """Return a set that callers can read but cannot change."""
         return frozenset(self._pegs)
 
     @property
@@ -56,9 +57,10 @@ class PegSolitaireGame:
         for position in positions:
             if not isinstance(position, (list, tuple)) or len(position) != 2:
                 raise ValueError("A position must contain a row and column.")
-            if any(type(value) is not int for value in position):
+            row, column = position
+            if type(row) is not int or type(column) is not int:
                 raise ValueError("Coordinates must be whole numbers.")
-            position = tuple(position)
+            position = (row, column)
             if position not in self.holes or position in pegs:
                 raise ValueError("Peg positions must be unique holes on the board.")
             pegs.add(position)
@@ -73,11 +75,15 @@ class PegSolitaireGame:
             return False
         if start not in self._pegs or end in self._pegs:
             return False
-        change = (end[0] - start[0], end[1] - start[1])
-        if change not in self.DIRECTIONS:
+        row_change = end[0] - start[0]
+        column_change = end[1] - start[1]
+        if (row_change, column_change) not in self.DIRECTIONS:
             return False
-        middle = ((start[0] + end[0]) // 2, (start[1] + end[1]) // 2)
-        return middle in self._pegs
+
+        middle_row = (start[0] + end[0]) // 2
+        middle_column = (start[1] + end[1]) // 2
+        jumped_peg = (middle_row, middle_column)
+        return jumped_peg in self._pegs
 
     def legal_moves(self):
         """Find every legal jump, in a stable order."""
@@ -93,15 +99,20 @@ class PegSolitaireGame:
         """Return False without changes, or apply one legal jump and return True."""
         if not self.is_valid_move(start, end):
             return False
-        middle = ((start[0] + end[0]) // 2, (start[1] + end[1]) // 2)
+        middle_row = (start[0] + end[0]) // 2
+        middle_column = (start[1] + end[1]) // 2
+        jumped_peg = (middle_row, middle_column)
+
         self._pegs.remove(start)
-        self._pegs.remove(middle)
+        self._pegs.remove(jumped_peg)
         self._pegs.add(end)
         self._move_count += 1
         return True
 
     def is_game_over(self):
-        return self.peg_count == 1 or not self.legal_moves()
+        if self.peg_count == 1:
+            return True
+        return len(self.legal_moves()) == 0
 
     def is_won(self):
         return self.peg_count == 1
