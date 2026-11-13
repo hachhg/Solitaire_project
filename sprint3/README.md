@@ -78,7 +78,7 @@ py -m unittest sprint3.tests.test_game sprint3.tests.test_recording -v
 
 The English board uses the same plus shape as Sprint 2. The Hexagon and Diamond
 use the same documented formulas. Pegs and counters are changed through game
-methods; the public `pegs` property returns an immutable collection.
+methods; `get_pegs()` returns an immutable collection.
 
 The mode is selected when New Game creates a model. The program replaces the
 model when a new mode is chosen; it does not change an object's Python class.
@@ -92,7 +92,8 @@ by `_update_buttons`.
 
 A few Python features used here:
 
-- `@property` provides a getter, such as reading `game.peg_count`.
+- Regular getters read values, such as `game.get_peg_count()` and
+  `game.get_move_count()`. They are called with parentheses.
 - `frozenset` is a set that callers cannot change.
 - A leading underscore marks an internal field or helper by Python convention.
 - `@classmethod` lets `GameReplay.load` return a new replay object from a file.

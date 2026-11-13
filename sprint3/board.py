@@ -14,29 +14,26 @@ class Board:
         self._size = size
         self._board_type = board_type
 
-    @property
-    def size(self):
+    def get_size(self):
         return self._size
 
-    @property
-    def board_type(self):
+    def get_board_type(self):
         return self._board_type
 
-    @property
-    def center(self):
-        return (self.size // 2, self.size // 2)
+    def get_center(self):
+        return (self.get_size() // 2, self.get_size() // 2)
 
     def holes(self):
         """Return the playable zero-based row and column pairs."""
-        middle = self.size // 2
+        middle = self.get_size() // 2
         holes = set()
-        for row in range(self.size):
-            for column in range(self.size):
-                if self.board_type == "English":
+        for row in range(self.get_size()):
+            for column in range(self.get_size()):
+                if self.get_board_type() == "English":
                     middle_rows = abs(row - middle) <= 1
                     middle_columns = abs(column - middle) <= 1
                     valid = middle_rows or middle_columns
-                elif self.board_type == "Diamond":
+                elif self.get_board_type() == "Diamond":
                     distance = abs(row - middle) + abs(column - middle)
                     valid = distance <= middle
                 else:

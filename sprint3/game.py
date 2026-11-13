@@ -25,28 +25,23 @@ class PegSolitaireGame:
         self._board = board
         self._holes = frozenset(board.holes())
         self._pegs = set(self._holes)
-        self._pegs.remove(board.center)
+        self._pegs.remove(board.get_center())
         self._move_count = 0
 
-    @property
-    def board(self):
+    def get_board(self):
         return self._board
 
-    @property
-    def holes(self):
+    def get_holes(self):
         return self._holes
 
-    @property
-    def pegs(self):
+    def get_pegs(self):
         """Return a set that callers can read but cannot change."""
         return frozenset(self._pegs)
 
-    @property
-    def move_count(self):
+    def get_move_count(self):
         return self._move_count
 
-    @property
-    def peg_count(self):
+    def get_peg_count(self):
         return len(self._pegs)
 
     def restore_position(self, positions, move_count=0):
@@ -61,7 +56,7 @@ class PegSolitaireGame:
             if type(row) is not int or type(column) is not int:
                 raise ValueError("Coordinates must be whole numbers.")
             position = (row, column)
-            if position not in self.holes or position in pegs:
+            if position not in self.get_holes() or position in pegs:
                 raise ValueError("Peg positions must be unique holes on the board.")
             pegs.add(position)
         if not pegs:
@@ -71,7 +66,7 @@ class PegSolitaireGame:
 
     def is_valid_move(self, start, end):
         """A jump goes two cells over one peg into an empty hole."""
-        if start not in self.holes or end not in self.holes:
+        if start not in self.get_holes() or end not in self.get_holes():
             return False
         if start not in self._pegs or end in self._pegs:
             return False
@@ -110,21 +105,21 @@ class PegSolitaireGame:
         return True
 
     def is_game_over(self):
-        if self.peg_count == 1:
+        if self.get_peg_count() == 1:
             return True
         return len(self.legal_moves()) == 0
 
     def is_won(self):
-        return self.peg_count == 1
+        return self.get_peg_count() == 1
 
     def rating(self):
         if not self.is_game_over():
             return None
-        if self.peg_count == 1:
+        if self.get_peg_count() == 1:
             return "Outstanding"
-        if self.peg_count == 2:
+        if self.get_peg_count() == 2:
             return "Very Good"
-        if self.peg_count == 3:
+        if self.get_peg_count() == 3:
             return "Good"
         return "Average"
 
@@ -138,8 +133,8 @@ class ManualGame(PegSolitaireGame):
         """Rearrange pegs without changing their count, board or move count."""
         if self.is_game_over():
             return False
-        positions = self._random.sample(sorted(self.holes), self.peg_count)
-        self.restore_position(positions, self.move_count)
+        positions = self._random.sample(sorted(self.get_holes()), self.get_peg_count())
+        self.restore_position(positions, self.get_move_count())
         return True
 
 

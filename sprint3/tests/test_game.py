@@ -13,8 +13,8 @@ class BoardTests(unittest.TestCase):
             with self.subTest(board=name):
                 board = Board(7, name)
                 self.assertEqual(len(board.holes()), count)
-                self.assertIn(board.center, board.holes())
-                self.assertEqual(Board(5, name).size, 5)
+                self.assertIn(board.get_center(), board.holes())
+                self.assertEqual(Board(5, name).get_size(), 5)
 
     def test_english_board_is_a_plus_sign(self):
         holes = Board(7, "English").holes()
@@ -35,23 +35,23 @@ class ManualGameTests(unittest.TestCase):
         game = ManualGame()
         game.move((1, 3), (3, 3))
         game.new_game(5, "Hexagon")
-        self.assertEqual((game.board.size, game.board.board_type), (5, "Hexagon"))
-        self.assertEqual(game.pegs, game.holes - {game.board.center})
-        self.assertEqual(game.move_count, 0)
+        self.assertEqual((game.get_board().get_size(), game.get_board().get_board_type()), (5, "Hexagon"))
+        self.assertEqual(game.get_pegs(), game.get_holes() - {game.get_board().get_center()})
+        self.assertEqual(game.get_move_count(), 0)
 
     def test_valid_jump_updates_three_holes(self):
         game = ManualGame(7, "English")
         self.assertTrue(game.move((1, 3), (3, 3)))
-        self.assertNotIn((1, 3), game.pegs)
-        self.assertNotIn((2, 3), game.pegs)
-        self.assertIn((3, 3), game.pegs)
-        self.assertEqual((game.peg_count, game.move_count), (31, 1))
+        self.assertNotIn((1, 3), game.get_pegs())
+        self.assertNotIn((2, 3), game.get_pegs())
+        self.assertIn((3, 3), game.get_pegs())
+        self.assertEqual((game.get_peg_count(), game.get_move_count()), (31, 1))
 
     def test_invalid_jump_leaves_state_unchanged(self):
         game = ManualGame()
-        before = (game.pegs, game.move_count)
+        before = (game.get_pegs(), game.get_move_count())
         self.assertFalse(game.move((0, 2), (3, 3)))
-        self.assertEqual((game.pegs, game.move_count), before)
+        self.assertEqual((game.get_pegs(), game.get_move_count()), before)
 
     def test_jumps_in_all_eight_directions(self):
         for dr, dc in PegSolitaireGame.DIRECTIONS:
@@ -62,7 +62,7 @@ class ManualGameTests(unittest.TestCase):
                 end = (4 + dr, 4 + dc)
                 game.restore_position([start, middle])
                 self.assertTrue(game.move(start, end))
-                self.assertEqual(game.pegs, {end})
+                self.assertEqual(game.get_pegs(), {end})
 
     def test_winning_move_ends_game(self):
         game = ManualGame()
@@ -81,55 +81,55 @@ class ManualGameTests(unittest.TestCase):
 
     def test_invalid_new_game_preserves_current_state(self):
         game = ManualGame()
-        before = (game.board, game.pegs, game.move_count)
+        before = (game.get_board(), game.get_pegs(), game.get_move_count())
         with self.assertRaises(ValueError):
             game.new_game(6)
-        self.assertEqual((game.board, game.pegs, game.move_count), before)
+        self.assertEqual((game.get_board(), game.get_pegs(), game.get_move_count()), before)
 
-    def test_pegs_and_counts_cannot_be_assigned_by_clients(self):
+    def test_getters_return_read_only_game_data(self):
         game = ManualGame()
         with self.assertRaises(AttributeError):
-            game.pegs.add((3, 3))
+            game.get_pegs().add((3, 3))
         with self.assertRaises(AttributeError):
-            game.pegs = set()
-        with self.assertRaises(AttributeError):
-            game.move_count = 10
+            game.get_holes().add((0, 0))
+        self.assertEqual(game.get_peg_count(), 32)
+        self.assertEqual(game.get_move_count(), 0)
 
     def test_restore_rejects_bad_positions_without_changes(self):
         game = ManualGame()
-        before = (game.pegs, game.move_count)
+        before = (game.get_pegs(), game.get_move_count())
         for positions, moves in (([], 0), ([(0, 0)], 0),
                                  ([(3, 3), (3, 3)], 0), ([(3, 3)], -1)):
             with self.subTest(positions=positions), self.assertRaises(ValueError):
                 game.restore_position(positions, moves)
-            self.assertEqual((game.pegs, game.move_count), before)
+            self.assertEqual((game.get_pegs(), game.get_move_count()), before)
 
 
 class RandomizationTests(unittest.TestCase):
     def test_randomization_preserves_counts_and_board(self):
         game = ManualGame(seed=12)
         game.move((1, 3), (3, 3))
-        before = (game.board, game.peg_count, game.move_count)
-        positions = game.pegs
+        before = (game.get_board(), game.get_peg_count(), game.get_move_count())
+        positions = game.get_pegs()
         self.assertTrue(game.randomize())
-        self.assertEqual((game.board, game.peg_count, game.move_count), before)
-        self.assertTrue(game.pegs <= game.holes)
-        self.assertNotEqual(game.pegs, positions)
+        self.assertEqual((game.get_board(), game.get_peg_count(), game.get_move_count()), before)
+        self.assertTrue(game.get_pegs() <= game.get_holes())
+        self.assertNotEqual(game.get_pegs(), positions)
 
     def test_randomization_can_be_repeated_during_manual_play(self):
         game = ManualGame(5, "English", seed=7)
         for _ in range(3):
             start, end = game.legal_moves()[0]
             game.move(start, end)
-            count = game.peg_count
+            count = game.get_peg_count()
             self.assertTrue(game.randomize())
-            self.assertEqual(game.peg_count, count)
+            self.assertEqual(game.get_peg_count(), count)
 
     def test_finished_game_cannot_be_randomized(self):
         game = ManualGame()
         game.restore_position([(3, 3)])
         self.assertFalse(game.randomize())
-        self.assertEqual(game.pegs, {(3, 3)})
+        self.assertEqual(game.get_pegs(), {(3, 3)})
 
 
 class AutomatedGameTests(unittest.TestCase):
@@ -142,33 +142,33 @@ class AutomatedGameTests(unittest.TestCase):
     def test_automated_move_is_legal_and_removes_one_peg(self):
         game = AutomatedGame(seed=3)
         legal = game.legal_moves()
-        before = game.pegs
+        before = game.get_pegs()
         move = game.auto_move()
         self.assertIn(move, legal)
         start, end = move
         middle = ((start[0] + end[0]) // 2, (start[1] + end[1]) // 2)
-        self.assertEqual(game.pegs, (before - {start, middle}) | {end})
-        self.assertEqual(game.move_count, 1)
+        self.assertEqual(game.get_pegs(), (before - {start, middle}) | {end})
+        self.assertEqual(game.get_move_count(), 1)
 
     def test_automated_games_finish_on_all_board_types(self):
         for name in Board.TYPES:
             for size in (5, 7):
                 with self.subTest(board=name, size=size):
                     game = AutomatedGame(size, name, seed=10)
-                    initial_count = game.peg_count
+                    initial_count = game.get_peg_count()
                     for _ in range(initial_count):
                         if game.auto_move() is None:
                             break
                     self.assertTrue(game.is_game_over())
                     self.assertEqual(game.legal_moves(), [])
-                    self.assertEqual(game.peg_count + game.move_count, initial_count)
+                    self.assertEqual(game.get_peg_count() + game.get_move_count(), initial_count)
                     self.assertIsNotNone(game.rating())
 
     def test_automated_move_after_game_over_changes_nothing(self):
         game = AutomatedGame()
         game.restore_position([(3, 3)], 5)
         self.assertIsNone(game.auto_move())
-        self.assertEqual((game.pegs, game.move_count), ({(3, 3)}, 5))
+        self.assertEqual((game.get_pegs(), game.get_move_count()), ({(3, 3)}, 5))
 
 
 if __name__ == "__main__":

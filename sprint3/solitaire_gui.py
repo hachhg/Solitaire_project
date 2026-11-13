@@ -152,10 +152,10 @@ class SolitaireApp:
         if self.game.is_game_over():
             self.refresh()
             return
-        if position not in self.game.holes:
+        if position not in self.game.get_holes():
             self.status_var.set("That position is outside the board.")
         elif self.selected is None:
-            if position in self.game.pegs:
+            if position in self.game.get_pegs():
                 self.selected = position
                 self.refresh("Peg selected. Click its empty destination.")
             else:
@@ -205,7 +205,7 @@ class SolitaireApp:
 
     def toggle_autoplay(self):
         if self.replay is not None:
-            if self.replay.finished:
+            if self.replay.is_finished():
                 return
         elif self.game.MODE != "Automated" or self.game.is_game_over():
             return
@@ -229,7 +229,7 @@ class SolitaireApp:
             action = self.replay.step()
             self.game = self.replay.game
             message = f"Replay: {action}."
-            if self.replay.finished:
+            if self.replay.is_finished():
                 self.running = False
                 message = "Replay finished. Click Replay to open a recording again."
         else:
@@ -309,12 +309,12 @@ class SolitaireApp:
         self.recording = None
         self.recording_path = None
         self.record_var.set(False)
-        self.size_var.set(str(self.game.board.size))
-        self.type_var.set(self.game.board.board_type)
+        self.size_var.set(str(self.game.get_board().get_size()))
+        self.type_var.set(self.game.get_board().get_board_type())
         self.mode_var.set(self.game.MODE)
         self.file_var.set(f"Replaying {Path(path).name}")
         self.refresh("Recording loaded.")
-        if not replay.finished:
+        if not replay.is_finished():
             self.toggle_autoplay()
         else:
             self.refresh("Replay finished. This recording contains its starting position only.")
@@ -322,20 +322,20 @@ class SolitaireApp:
 
     def refresh(self, message=None):
         """Show the current counts, message, button states and board."""
-        board = self.game.board
+        board = self.game.get_board()
         mode = self.game.MODE
         if self.replay is not None:
             mode = "Replay"
-        self.summary_var.set(f"{board.board_type} {board.size} x {board.size} | {mode}"
-                             f" | Pegs: {self.game.peg_count} | Moves: {self.game.move_count}")
+        self.summary_var.set(f"{board.get_board_type()} {board.get_size()} x {board.get_size()} | {mode}"
+                             f" | Pegs: {self.game.get_peg_count()} | Moves: {self.game.get_move_count()}")
         game_over = self.game.is_game_over()
         if game_over:
             if self.game.is_won():
                 result = "You won!"
             else:
                 result = "Game over - no legal moves."
-            text = f"{result} {self.game.peg_count} peg(s) left. Rating: {self.game.rating()}."
-            if self.replay is not None and self.replay.finished:
+            text = f"{result} {self.game.get_peg_count()} peg(s) left. Rating: {self.game.rating()}."
+            if self.replay is not None and self.replay.is_finished():
                 text += " Replay finished."
             if message and "could not be saved" in message:
                 text += " " + message
@@ -357,7 +357,7 @@ class SolitaireApp:
 
         if self.replay is not None:
             self.record_check.configure(state="disabled")
-            if not self.replay.finished:
+            if not self.replay.is_finished():
                 self.auto_button.configure(state="normal")
         elif not game_over:
             if self.game.MODE == "Manual":
@@ -375,14 +375,14 @@ class SolitaireApp:
         self.canvas.delete("all")
         width = max(self.canvas.winfo_width(), 100)
         height = max(self.canvas.winfo_height(), 100)
-        size = self.game.board.size
+        size = self.game.get_board().get_size()
         cell_size = min((width - 70) / size, (height - 70) / size)
         self.cell_half_size = cell_size / 2
         first_x = (width - (size - 1) * cell_size) / 2
         first_y = (height - (size - 1) * cell_size) / 2
         self.centers = {}
 
-        for row, column in sorted(self.game.holes):
+        for row, column in sorted(self.game.get_holes()):
             x = first_x + column * cell_size
             y = first_y + row * cell_size
             self.centers[(row, column)] = (x, y)
@@ -395,7 +395,7 @@ class SolitaireApp:
                 x - half, y - half, x + half, y + half,
                 fill=color, outline="#333333", width=1.5,
             )
-            if (row, column) in self.game.pegs:
+            if (row, column) in self.game.get_pegs():
                 peg_radius = max(2, cell_size * 0.145)
                 self.canvas.create_oval(
                     x - peg_radius, y - peg_radius,

@@ -18,35 +18,35 @@ class RecordingTests(unittest.TestCase):
     def test_manual_moves_replay_every_position(self):
         game = ManualGame()
         recording = GameRecording(game)
-        expected = [(game.pegs, game.move_count)]
+        expected = [(game.get_pegs(), game.get_move_count())]
         for _ in range(3):
             start, end = game.legal_moves()[0]
             game.move(start, end)
             recording.record_move(start, end)
-            expected.append((game.pegs, game.move_count))
+            expected.append((game.get_pegs(), game.get_move_count()))
         recording.save(self.path)
         replay = GameReplay.load(self.path)
-        self.assertEqual((replay.game.pegs, replay.game.move_count), expected[0])
+        self.assertEqual((replay.game.get_pegs(), replay.game.get_move_count()), expected[0])
         for state in expected[1:]:
             self.assertEqual(replay.step(), "move")
-            self.assertEqual((replay.game.pegs, replay.game.move_count), state)
-        self.assertTrue(replay.finished)
+            self.assertEqual((replay.game.get_pegs(), replay.game.get_move_count()), state)
+        self.assertTrue(replay.is_finished())
         self.assertIsNone(replay.step())
 
     def test_randomized_position_is_replayed_exactly(self):
         game = ManualGame(seed=1)
         game.move((1, 3), (3, 3))
         recording = GameRecording(game)
-        initial = game.pegs
+        initial = game.get_pegs()
         game.randomize()
         recording.record_randomization(game)
-        expected = game.pegs
+        expected = game.get_pegs()
         recording.save(self.path)
         replay = GameReplay.load(self.path)
-        self.assertEqual(replay.game.pegs, initial)
+        self.assertEqual(replay.game.get_pegs(), initial)
         self.assertEqual(replay.step(), "randomize")
-        self.assertEqual(replay.game.pegs, expected)
-        self.assertEqual(replay.game.move_count, 1)
+        self.assertEqual(replay.game.get_pegs(), expected)
+        self.assertEqual(replay.game.get_move_count(), 1)
 
     def test_complete_automated_game_replays_same_result(self):
         game = AutomatedGame(5, "Hexagon", seed=4)
@@ -61,8 +61,8 @@ class RecordingTests(unittest.TestCase):
         while replay.step():
             pass
         self.assertEqual(replay.game.MODE, "Automated")
-        self.assertEqual(replay.game.pegs, game.pegs)
-        self.assertEqual(replay.game.move_count, game.move_count)
+        self.assertEqual(replay.game.get_pegs(), game.get_pegs())
+        self.assertEqual(replay.game.get_move_count(), game.get_move_count())
         self.assertEqual(replay.game.rating(), game.rating())
 
     def test_recording_can_start_in_the_middle_of_a_game(self):
@@ -70,9 +70,9 @@ class RecordingTests(unittest.TestCase):
         game.move((1, 3), (3, 3))
         GameRecording(game).save(self.path)
         replay = GameReplay.load(self.path)
-        self.assertTrue(replay.finished)
-        self.assertEqual(replay.game.pegs, game.pegs)
-        self.assertEqual(replay.game.move_count, 1)
+        self.assertTrue(replay.is_finished())
+        self.assertEqual(replay.game.get_pegs(), game.get_pegs())
+        self.assertEqual(replay.game.get_move_count(), 1)
 
     def test_truncated_file_is_rejected(self):
         self.path.write_text('{"version":', encoding="utf-8")

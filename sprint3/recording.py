@@ -11,16 +11,16 @@ class GameRecording:
 
     def __init__(self, game):
         positions = []
-        for row, column in sorted(game.pegs):
+        for row, column in sorted(game.get_pegs()):
             positions.append([row, column])
 
         self._data = {
             "version": 1,
-            "size": game.board.size,
-            "board_type": game.board.board_type,
+            "size": game.get_board().get_size(),
+            "board_type": game.get_board().get_board_type(),
             "mode": game.MODE,
             "initial_pegs": positions,
-            "initial_moves": game.move_count,
+            "initial_moves": game.get_move_count(),
             "events": [],
         }
 
@@ -31,7 +31,7 @@ class GameRecording:
 
     def record_randomization(self, game):
         positions = []
-        for row, column in sorted(game.pegs):
+        for row, column in sorted(game.get_pegs()):
             positions.append([row, column])
 
         self._data["events"].append({
@@ -62,15 +62,14 @@ class GameReplay:
                 raise ValueError("The recording needs a list of events.")
             replay = cls(data)
             # Check each event now so a bad file never replaces the live game.
-            while not replay.finished:
+            while not replay.is_finished():
                 replay.step()
             replay.restart()
             return replay
         except (KeyError, TypeError, ValueError, AttributeError) as error:
             raise ValueError("Invalid game recording: " + str(error)) from error
 
-    @property
-    def finished(self):
+    def is_finished(self):
         return self._index == len(self._data["events"])
 
     def restart(self):
@@ -82,7 +81,7 @@ class GameReplay:
 
     def step(self):
         """Apply the next event and return its action, or None at the end."""
-        if self.finished:
+        if self.is_finished():
             return None
         event = self._data["events"][self._index]
         if self.game.is_game_over():
@@ -94,9 +93,9 @@ class GameReplay:
             if not self.game.move(start, end):
                 raise ValueError("The recording contains an illegal move.")
         elif action == "randomize" and self.game.MODE == "Manual":
-            count = self.game.peg_count
-            self.game.restore_position(event["pegs"], self.game.move_count)
-            if self.game.peg_count != count:
+            count = self.game.get_peg_count()
+            self.game.restore_position(event["pegs"], self.game.get_move_count())
+            if self.game.get_peg_count() != count:
                 raise ValueError("Randomization changed the number of pegs.")
         else:
             raise ValueError("Unknown action or randomization in automated mode.")
